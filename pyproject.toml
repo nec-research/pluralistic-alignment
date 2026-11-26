@@ -1,0 +1,215 @@
+[build-system]
+requires = [
+    "setuptools>=68",
+    "setuptools-scm[toml]>=8",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pluralistic_alignment"
+authors = [
+  {email = "chia-chien.hung@neclab.eu"},
+  {name = "Chia-Chien Hung"},
+]
+maintainers = [
+  {name = "Chia-Chien Hung", email = "chia-chien.hung@neclab.eu"},
+]
+description = "Pluralistic Alignment: a toolkit for studying language varieties in LLM pipelines."
+readme = "README.md"
+requires-python = "==3.12.*"
+license = {file = "LICENSE"}
+dynamic = ["version"]
+# License policy: every dependency must be commercially usable (pylic gate below).
+dependencies = [
+    "openai>=1.60",               # Apache-2.0 - Azure OpenAI + vLLM (OpenAI-compatible) clients
+    "datasets==5.0.1",            # Apache-2.0 - HF loaders. Pinned: the streaming
+                                  # shuffle order (pa seeds) changes between releases;
+                                  # 5.0.1 reproduces data/wiki/seeds.jsonl (July 2026)
+    "sentence-transformers>=3.3", # Apache-2.0 - Qwen3-Embedding similarity
+    "torch>=2.6",                 # BSD-3 - cu126 wheels, see [tool.uv.sources]
+    "lexical-diversity>=0.1.1",   # MIT - MATTR/MTLD
+    "rapidfuzz>=3.9",             # MIT - fuzzy marker matching
+    "pandas>=2.2",                # BSD-3
+    "numpy>=1.26",                # BSD-3
+    "scipy>=1.13",                # BSD-3 - bootstrap CIs, sign test
+    "matplotlib>=3.9",            # PSF-style
+    "pyyaml>=6.0",                # MIT - configs/*.yaml
+    "python-dotenv>=1.0",         # BSD-3 - .env loading in settings.py
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+pa = "pluralistic_alignment.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pylic",
+    "ruff",
+    "basedpyright",
+    "pandas-stubs>=3.1.0.261029",
+]
+
+[tool.uv]
+preview-features = ["audit-command", "malware-check"]
+
+# cu126 wheels: the default PyPI torch build dropped compute capability 7.0,
+# which the V100 hosts (c104) need.
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu126" }]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "--cov=pluralistic_alignment",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=24",
+]
+
+[tool.coverage.run]
+source = ["pluralistic_alignment"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 24
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "B",
+    "C90",
+    # Docstrings: existence checks only (D1xx).
+    "D1",
+    "E",
+    "F",
+    "I",
+    "PL",
+    "PT",
+    "RUF",
+    "S",
+    "SIM",
+    "UP",
+    "W",
+]
+ignore = [
+    # Avoid friction: don't require module / package / __init__ docstrings by default.
+    "D100",
+    "D104",
+    "D107",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+# Standalone script for the separate Multi-VALUE env: imports are deliberately lazy
+# (must follow thread/GPU env setup) and the worker signatures mirror Pool.starmap.
+"envs/**/*.py" = ["PLC0415", "D103", "PLR0913", "PLR0917"]
+".cursor/hooks/copier-update-check.py" = ["UP017"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+include = [
+    "src",
+    "scripts",
+    "tests",
+]
+
+# Allowlist: extend when legal clears other licenses
+[tool.pylic]
+safe_licenses = [
+    "Apache-2.0",
+    "Apache 2.0",
+    "Apache License, Version 2.0",
+    "Apache Software License",
+    "BSD",
+    "BSD License",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSD 3-Clause",
+    "3-Clause BSD License",
+    "Eclipse Public License 2.0 (EPL-2.0)",
+    "GNU Library or Lesser General Public License (LGPL)",
+    "GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "Historical Permission Notice and Disclaimer (HPND)",
+    "ISC License (ISCL)",
+    "MIT",
+    "MIT License",
+    "Mozilla Public License 2.0 (MPL 2.0)",
+    "Python Software Foundation License",
+    "PSF-2.0",
+    "Public Domain",
+    "The Unlicense (Unlicense)",
+    "Unlicense",
+    # Added 2026-11-25. Newer wheels declare SPDX `License-Expression`s, which
+    # pylic splits and checks per component; other wheels still report a
+    # free-text `License` string, matched whole. Every entry is permissive.
+    # (a) Already-allowed licences in another spelling (as in envs/multivalue):
+    "MPL-2.0 AND MIT",                    # tqdm (free-text string)
+    "Apache 2.0 License",                 # transformers (free-text string)
+    "CNRI-Python",                        # regex (Python 1.6 licence, permissive)
+    # (b) Permissive SPDX components not named above. No copyleft.
+    "Apache-2.0 WITH LLVM-exception",     # torch
+    "BSL-1.0",                            # torch (Boost)
+    "0BSD",                               # numpy
+    "CC0-1.0",                            # numpy
+    "Zlib",                               # numpy
+    "MIT-CMU",                            # pillow (HPND family)
+]
+# legacy pylic; used by older versions
+ignore_packages = [
+    "pluralistic_alignment",  # NLE license
+]
+unsafe_packages = [
+    "pluralistic_alignment",  # NLE license
+    # NVIDIA CUDA runtime pulled in by torch: proprietary, but the EULA permits
+    # commercial/research use. Allowed project-wide 2026-07-12 (see
+    # envs/multivalue/README.md "GPU usage"). By name, not by a generic
+    # "Proprietary" licence string, so unrelated proprietary packages still fail.
+    "cuda-toolkit",
+    "nvidia-cublas-cu12",
+    "nvidia-cuda-cupti-cu12",
+    "nvidia-cuda-nvrtc-cu12",
+    "nvidia-cuda-runtime-cu12",
+    "nvidia-cudnn-cu12",
+    "nvidia-cufft-cu12",
+    "nvidia-cufile-cu12",
+    "nvidia-curand-cu12",
+    "nvidia-cusolver-cu12",
+    "nvidia-cusparse-cu12",
+    "nvidia-cusparselt-cu12",
+    "nvidia-nccl-cu12",
+    "nvidia-nvjitlink-cu12",
+    "nvidia-nvshmem-cu12",
+    "nvidia-nvtx-cu12",
+]

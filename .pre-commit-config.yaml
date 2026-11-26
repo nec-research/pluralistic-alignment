@@ -1,0 +1,65 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ["--unsafe"]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+      - id: requirements-txt-fixer
+      - id: name-tests-test
+        args: ["--pytest-test-first"]  # tests are named test_*.py
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      # ruff runs from the project env (version pinned in uv.lock), so pre-commit
+      # and `make lint` can never disagree. A separately pinned ruff here once
+      # stripped `# noqa` comments for rules it did not know yet.
+      - id: ruff
+        name: ruff
+        entry: uv run ruff check --fix
+        language: system
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, pyi]
+      - id: forbid-env-files
+        name: forbid committing .env files
+        entry: Do not commit .env files. Use .env.example or .env.sample to describe the variables to be set in production.
+        language: fail
+        files: '(^|/)\.env(\..*)?$'
+        exclude: '(^|/)\.env\.(example|sample)$'
+      - id: basedpyright
+        name: basedpyright
+        entry: make typecheck
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: uv-lock-check
+        name: uv lock --check
+        entry: uv lock --check
+        language: system
+        pass_filenames: false

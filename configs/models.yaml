@@ -1,0 +1,30 @@
+# Experiment configuration (non-secret). Credentials live in .env (see .env.example).
+# Lists the deployments `pa edit` runs against; select a subset with
+# `pa edit --models a,b`.
+#
+# Your own setup: copy this file to configs/models.local.yaml (gitignored) and
+# edit it there. `pa` uses, in order: $PA_MODELS_CONFIG, configs/models.local.yaml,
+# then this file.
+
+# Deployment names on the Azure OpenAI resource configured via AZURE_OPENAI_* in .env.
+azure_models:
+  - gpt-5.4-mini
+  - gpt-5.6-luna
+
+# Self-hosted OpenAI-compatible servers (e.g. vLLM): `name` must equal the
+# server's served model name. base_url is not a secret, so it lives here; the
+# shared api_key is VLLM_API_KEY in .env. Example server for the first entry:
+#   vllm serve google/gemma-3-4b-it --served-model-name gemma-3-4b-it --port 8010
+vllm_models:
+  - name: gemma-3-4b-it
+    base_url: http://localhost:8010/v1
+  - name: gpt-oss-20b           # vllm serve openai/gpt-oss-20b
+    base_url: http://localhost:8011/v1
+  - name: Qwen3.6-35B-A3B       # vllm serve Qwen/Qwen3.6-35B-A3B
+    base_url: http://localhost:8014/v1
+
+# Deployments (from azure_models or vllm_models) that reject a custom
+# `temperature` value and only support the API default (1). `pa edit`
+# omits the `temperature` kwarg entirely for these.
+fixed_temperature_models:
+  - gpt-5.6-luna

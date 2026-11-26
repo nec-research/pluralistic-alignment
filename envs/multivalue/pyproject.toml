@@ -1,0 +1,88 @@
+[project]
+name = "multivalue-runner"
+version = "0.1.0"
+description = "Isolated environment for Multi-VALUE (SAE -> English-variety transformation). Kept separate from ../pyproject.toml on purpose."
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "value-nlp>=0.3",   # Apache-2.0 — Multi-VALUE; SALT-NLP/value on GitHub, PyPI name is value-nlp
+    "numpy>=1.26,<2",   # BSD-3 — value-nlp pins spacy==3.7.4 -> thinc<8.3, a numpy-1 ABI compiled wheel
+    "torch>=2.2,<2.6",  # BSD-3 — stanza (Multi-VALUE's coref dep) loads old pickled models that trip
+                        # torch>=2.6's new weights_only=True default
+    "transformers<4.51", # Apache-2.0 — >=4.51 hard-blocks torch.load below torch 2.6 (CVE-2025-32434
+                         # mitigation); see README.md "Known security trade-off" before touching this pin
+    # MIT — spaCy's official English model, pinned to the spacy==3.7.4 series. Installed here so
+    # `uv sync` is enough: multivalue/__init__.py calls spacy.cli.download("en_core_web_sm") on
+    # every import, which shells out to pip (hence the pip dependency below).
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl",
+    "pip",               # MIT — see above; uv venvs ship without pip
+]
+
+[dependency-groups]
+dev = ["pylic"]
+
+[tool.uv]
+package = false
+
+# GPU torch (default PyPI wheels): pulls in NVIDIA's proprietary CUDA
+# runtime as separate pip packages (nvidia-cublas-cu*, nvidia-cudnn-cu*,
+# etc., licensed "NVIDIA Proprietary Software"/"LicenseRef-NVIDIA-*").
+# Per 2026-07-12 decision: allowed project-wide -- "commercial-compatible"
+# means no legal blocker to commercial/research use, not FOSS-only, and
+# NVIDIA's CUDA runtime EULA permits that use. See docs/licenses.md and
+# AGENT.md "License policy" in the parent experiments/ dir.
+
+# Allowlist: extend when legal clears other licenses. Matches the parent
+# experiments/pyproject.toml allowlist, plus the NVIDIA CUDA runtime
+# licenses approved above.
+[tool.pylic]
+safe_licenses = [
+    "Apache-2.0",
+    "Apache 2.0",
+    "Apache 2.0 License",
+    "Apache License 2.0",
+    "Apache License, Version 2.0",
+    "Apache Software License",
+    "BSD",
+    "BSD License",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "MIT",
+    "MIT License",
+    "MPL-2.0 AND MIT",
+    "Mozilla Public License 2.0 (MPL 2.0)",
+    "Python Software Foundation License",
+    "PSF-2.0",
+    "Public Domain",
+    "The Unlicense (Unlicense)",
+    "Unlicense",
+    "GNU Library or Lesser General Public License (LGPL)",
+    "Historical Permission Notice and Disclaimer (HPND)",
+    "ISC License (ISCL)",
+    "3-Clause BSD License",
+    "Apache-2.0 AND CNRI-Python",
+    "Apache-2.0 OR BSD-2-Clause",
+]
+ignore_packages = [
+    "multivalue-runner",
+]
+# By-name allowlist rather than a blanket "Other/Proprietary License" safe
+# entry: that classifier string is generic enough to match unrelated
+# third-party packages too. These are specifically NVIDIA's CUDA runtime
+# components (proprietary but commercial-use-permitting; approved
+# 2026-07-12, see note above) -- add new ones here if `uv sync` pulls in
+# further nvidia-* packages for a different torch/CUDA version.
+unsafe_packages = [
+    "nvidia-cublas-cu12",
+    "nvidia-cuda-cupti-cu12",
+    "nvidia-cuda-nvrtc-cu12",
+    "nvidia-cuda-runtime-cu12",
+    "nvidia-cudnn-cu12",
+    "nvidia-cufft-cu12",
+    "nvidia-curand-cu12",
+    "nvidia-cusolver-cu12",
+    "nvidia-cusparse-cu12",
+    "nvidia-nccl-cu12",
+    "nvidia-nvjitlink-cu12",
+    "nvidia-nvtx-cu12",
+]

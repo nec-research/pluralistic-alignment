@@ -1,0 +1,39 @@
+.cache/
+.venv/
+.env
+.env.*
+!.env.example
+!.env.sample
+.ipynb_checkpoints/
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+.coverage
+coverage.xml
+htmlcov/
+.DS_Store
+.cursor/
+.copier-answers.yml
+.gitlab-ci.yml
+
+# Experiment data and outputs: never committed. FLORES+ text and anything derived
+# from it must live under data/private/ or results/private/ (plan §2).
+data/*
+!data/wiki/
+data/wiki/runs/
+results/
+
+# Archived intermediate/legacy code (not part of the shareable repo).
+archive/
+.keys.env
+*.keys.env
+
+# Per-user model deployments (see configs/models.yaml)
+configs/*.local.yaml
